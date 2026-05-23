@@ -18,7 +18,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 17
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -31,20 +31,25 @@ jobs:
       - name: Accept Licenses
         run: yes | sdkmanager --licenses
 
-      - name: Install Build Tools
+      - name: Install SDK
         run: |
           sdkmanager \
           "platform-tools" \
           "platforms;android-34" \
           "build-tools;34.0.0"
 
-      - name: Fix Gradlew Permission
+      - name: Clear Gradle Cache
+        run: |
+          rm -rf ~/.gradle/caches
+          rm -rf ~/.gradle/daemon
+
+      - name: Permission
         run: chmod +x gradlew
 
-      - name: Clean Project
+      - name: Clean
         run: ./gradlew clean --stacktrace
 
-      - name: Build Debug APK
+      - name: Build APK
         run: ./gradlew assembleDebug --stacktrace --info
 
       - name: Upload APK
@@ -52,13 +57,3 @@ jobs:
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        if: github.ref == 'refs/heads/main'
-        with:
-          tag_name: v1.${{ github.run_number }}
-          name: Lowkey Browser Build v1.${{ github.run_number }}
-          files: app/build/outputs/apk/debug/app-debug.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
